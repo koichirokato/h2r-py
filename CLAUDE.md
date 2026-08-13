@@ -2,9 +2,9 @@
 
 ## About this repo
 
-Python-native implementation of [h2r](../h2r) (Rust). Unlike `../h2r/sdk/python`, which wraps
-the Rust shared library via ctypes, this repo implements HTTP/2 streaming, length-delimited
-framing, and the static YAML peer registry natively in Python. See `../h2r/docs/architecture.md`.
+h2r is a lightweight pub/sub middleware for robots built on raw HTTP/2 streaming (see
+README.md). This repo is a pure-Python implementation: HTTP/2 streaming, length-delimited
+framing, and the static YAML peer registry are all implemented natively in Python.
 
 ## Forbidden (strict)
 
