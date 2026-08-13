@@ -179,3 +179,66 @@ async def test_multiple_frames_arrive_in_order() -> None:
                 await asyncio.wait_for(_next_frame(body, decoder), timeout=_READ_TIMEOUT),
             )
     assert received == payloads
+
+
+# `_headers_to_dict`, `_response_headers_for`, and `_next_chunk_size` are the pure
+# helpers `_ConnectionHandler` wraps; tested directly here since none of them need a
+# connection, a socket, or an event loop to exercise exhaustively.
+
+
+def test_headers_to_dict_decodes_bytes_and_str() -> None:
+    assert publisher_module._headers_to_dict(
+        [(b":path", b"/sensor/imu"), ("content-type", "application/octet-stream")],
+    ) == {":path": "/sensor/imu", "content-type": "application/octet-stream"}
+
+
+def test_headers_to_dict_empty() -> None:
+    assert publisher_module._headers_to_dict([]) == {}
+
+
+def test_response_headers_for_known_type_is_200_with_type_header() -> None:
+    assert publisher_module._response_headers_for(_MESSAGE_TYPE) == [
+        (":status", "200"),
+        ("content-type", "application/octet-stream"),
+        ("x-h2r-type", _MESSAGE_TYPE),
+    ]
+
+
+def test_response_headers_for_unknown_topic_is_404() -> None:
+    assert publisher_module._response_headers_for(None) == [(":status", "404")]
+
+
+def test_next_chunk_size_bounded_by_window() -> None:
+    chunk_size = publisher_module._next_chunk_size(
+        remaining_length=1000,
+        window=10,
+        max_frame_size=100,
+    )
+    assert chunk_size == 10
+
+
+def test_next_chunk_size_bounded_by_max_frame_size() -> None:
+    chunk_size = publisher_module._next_chunk_size(
+        remaining_length=1000,
+        window=10_000,
+        max_frame_size=16,
+    )
+    assert chunk_size == 16
+
+
+def test_next_chunk_size_bounded_by_remaining_payload() -> None:
+    chunk_size = publisher_module._next_chunk_size(
+        remaining_length=3,
+        window=10_000,
+        max_frame_size=100,
+    )
+    assert chunk_size == 3
+
+
+def test_next_chunk_size_zero_window_yields_zero() -> None:
+    chunk_size = publisher_module._next_chunk_size(
+        remaining_length=100,
+        window=0,
+        max_frame_size=100,
+    )
+    assert chunk_size == 0

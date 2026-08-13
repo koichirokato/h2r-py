@@ -20,7 +20,9 @@ import h2.exceptions
 from h2r import frame
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable
+    from collections.abc import Iterable
+    from collections.abc import Mapping
 
 # Chunk size for reads off the raw socket; independent of HTTP/2 frame sizing.
 _READ_CHUNK_SIZE = 65536
@@ -34,6 +36,42 @@ _SUBSCRIBER_QUEUE_MAXSIZE = 64
 def _decode_header(value: bytes | str) -> str:
     """Normalize an inbound header field to `str` regardless of h2's static `bytes` typing."""
     return value if isinstance(value, str) else value.decode("utf-8")
+
+
+def _headers_to_dict(headers: Iterable[tuple[bytes | str, bytes | str]]) -> dict[str, str]:
+    """Decode an h2 event's header list into a plain ``str`` -> ``str`` mapping.
+
+    Pure: the result depends only on *headers*.
+    """
+    return {_decode_header(name): _decode_header(value) for name, value in headers}
+
+
+def _response_headers_for(message_type: str | None) -> list[tuple[str, str]]:
+    """Build the HTTP/2 response headers for a request against an advertised topic.
+
+    *message_type* is the topic's registered ``x-h2r-type`` value, or ``None`` if the
+    requested topic isn't advertised — in which case these are 404 headers instead of 200's.
+
+    Pure: the result depends only on *message_type*.
+    """
+    if message_type is None:
+        return [(":status", "404")]
+    return [
+        (":status", "200"),
+        ("content-type", "application/octet-stream"),
+        ("x-h2r-type", message_type),
+    ]
+
+
+def _next_chunk_size(remaining_length: int, window: int, max_frame_size: int) -> int:
+    """Return how many bytes of a payload to send in the next DATA frame.
+
+    Bounded by the flow-control *window*, the connection's *max_frame_size*, and how much
+    payload (*remaining_length*) is actually left to send.
+
+    Pure: the result depends only on its three arguments.
+    """
+    return min(remaining_length, window, max_frame_size)
 
 
 class _Subscription:
@@ -130,21 +168,15 @@ class _ConnectionHandler:
         """Answer a new stream: 200 + subscribe for an advertised topic, else 404."""
         # h2's `Header` type is statically `bytes`-only even though `header_encoding="utf-8"`
         # decodes to `str` at runtime; normalize explicitly so downstream typing lines up.
-        headers = {_decode_header(name): _decode_header(value) for name, value in event.headers}
+        headers = _headers_to_dict(event.headers)
         topic = headers.get(":path", "")
         message_type = self._advertised.get(topic)
+        response_headers = _response_headers_for(message_type)
         if message_type is None:
-            self._connection.send_headers(event.stream_id, [(":status", "404")], end_stream=True)
+            self._connection.send_headers(event.stream_id, response_headers, end_stream=True)
             return
 
-        self._connection.send_headers(
-            event.stream_id,
-            [
-                (":status", "200"),
-                ("content-type", "application/octet-stream"),
-                ("x-h2r-type", message_type),
-            ],
-        )
+        self._connection.send_headers(event.stream_id, response_headers)
         subscription = _Subscription()
         self._register_subscriber(topic, subscription)
         self._stream_subscriptions[event.stream_id] = (topic, subscription)
@@ -183,7 +215,11 @@ class _ConnectionHandler:
         view = memoryview(payload)
         while view:
             window = self._connection.local_flow_control_window(stream_id)
-            chunk_size = min(window, self._connection.max_outbound_frame_size)
+            chunk_size = _next_chunk_size(
+                len(view),
+                window,
+                self._connection.max_outbound_frame_size,
+            )
             if chunk_size <= 0:
                 subscription = self._stream_subscriptions[stream_id][1]
                 subscription.window_available.clear()
