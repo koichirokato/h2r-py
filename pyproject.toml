@@ -41,6 +41,12 @@ ignore = [
     "D213",   # incompatible with D212 (picked below)
 ]
 
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [
     "S101",   # assert is pytest's mechanism
