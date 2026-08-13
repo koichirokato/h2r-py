@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "h2r"
+version = "0.1.0"
+description = "h2r — HTTP/2 robotics pub/sub middleware (pure Python implementation)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "protobuf>=4.25",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.9",
+    "ty>=0.0.1a8",
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["h2r*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812", # conflicts with `ruff format`
+    "ISC001", # conflicts with `ruff format`
+    "CPY001", # no per-file copyright headers; LICENSE covers it
+    "D203",   # incompatible with D211 (picked below)
+    "D213",   # incompatible with D212 (picked below)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D"] # assert is pytest's mechanism; test names are self-documenting
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
