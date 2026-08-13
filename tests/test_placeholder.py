@@ -1,5 +1,5 @@
-from h2r import __version__
+import h2r
 
 
 def test_version() -> None:
-    assert __version__ == "0.1.0"
+    assert h2r.__version__ == "0.1.0"
