@@ -1,0 +1,12 @@
+services:
+  dev:
+    build: .
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - h2r-py-venv:/workspace/.venv
+    tty: true
+    stdin_open: true
+
+volumes:
+  h2r-py-venv:

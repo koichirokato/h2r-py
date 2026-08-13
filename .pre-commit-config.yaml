@@ -1,0 +1,36 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+
+  # All project tooling (ruff, ty) runs inside the dev container via the
+  # Makefile — never called directly, and never on the host — see CLAUDE.md
+  # "Development environment".
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: make ruff-check-fix
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff-format
+        name: ruff format
+        entry: make fmt
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ty
+        name: ty check
+        entry: make ty
+        language: system
+        pass_filenames: false
+        types: [python]

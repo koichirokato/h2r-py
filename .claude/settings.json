@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/pre-push-check.sh",
+            "if": "Bash(git push*)",
+            "timeout": 300,
+            "statusMessage": "Running pre-push checks (ruff / ty / pytest via Docker)..."
+          }
+        ]
+      }
+    ]
+  }
+}
