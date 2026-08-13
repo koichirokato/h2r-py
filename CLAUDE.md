@@ -27,4 +27,6 @@ framing, and the static YAML peer registry are all implemented natively in Pytho
 
 ## Docs
 
+- Don't write documentation beyond what's asked for. Prefer code (type signatures,
+  docstrings stating the contract) over prose design docs
 - Update README.md's directory structure when adding a new module/package

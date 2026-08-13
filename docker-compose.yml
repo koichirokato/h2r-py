@@ -1,6 +1,19 @@
 services:
   dev:
-    build: .
+    build:
+      context: .
+      args:
+        DEV_UID: "${DEV_UID:-1000}"
+        DEV_GID: "${DEV_GID:-1000}"
+    # Run as the host user so bind-mounted source and volume-mounted caches
+    # (.venv, .ruff_cache, __pycache__, ...) stay host-owned. Set by the
+    # Makefile (DEV_UID/DEV_GID); falls back to uid/gid 1000 otherwise.
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    # That UID has no /etc/passwd entry, so give it a writable HOME — set only
+    # here (not as a Dockerfile ENV) so the root-run build stage is unaffected
+    # and never bakes root-owned cache files into this path.
+    environment:
+      - HOME=/tmp
     working_dir: /workspace
     volumes:
       - .:/workspace

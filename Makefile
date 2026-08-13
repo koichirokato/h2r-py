@@ -6,6 +6,11 @@
 .PHONY: build shell sync ruff-check ruff-check-fix ruff-format-check fmt ty \
 	lint test check pre-commit-install clean help
 
+# Run the dev container as the host user (see docker-compose.yml's `user:`
+# field) so files it writes into bind mounts / volumes stay host-owned.
+export DEV_UID := $(shell id -u)
+export DEV_GID := $(shell id -g)
+
 ## Build the dev Docker image
 build:
 	docker compose build
