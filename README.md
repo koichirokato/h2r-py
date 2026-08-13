@@ -38,9 +38,9 @@ This repository is a pure-Python implementation of h2r.
 Docker + uv; no host Python setup required.
 
 ```sh
-make build               # build the dev image
-make sync                # install dependencies
-make check               # lint (ruff + ty) + test (pytest)
+make build                # build the dev image
+make sync                 # install dependencies
+make check                # lint (ruff + ty) + test (pytest)
 make pre-commit-install   # install the git pre-commit hook (ruff + ty on every commit)
 ```
 
