@@ -17,6 +17,26 @@ def encode_frame(payload: bytes) -> bytes:
     return _LENGTH_PREFIX.pack(len(payload)) + payload
 
 
+def _extract_frames(buffer: bytes) -> tuple[list[bytes], bytes]:
+    """Split *buffer* into complete frame payloads and the leftover partial frame.
+
+    Pure: the result depends only on *buffer*, and nothing outside the return
+    value is read or changed. :class:`FrameDecoder` is a thin stateful wrapper
+    around this.
+    """
+    frames: list[bytes] = []
+    offset = 0
+    while len(buffer) - offset >= LENGTH_PREFIX_SIZE:
+        (length,) = _LENGTH_PREFIX.unpack_from(buffer, offset)
+        start = offset + LENGTH_PREFIX_SIZE
+        end = start + length
+        if len(buffer) < end:
+            break
+        frames.append(buffer[start:end])
+        offset = end
+    return frames, buffer[offset:]
+
+
 class FrameDecoder:
     """Incrementally decodes length-delimited frames from a byte stream.
 
@@ -27,17 +47,9 @@ class FrameDecoder:
 
     def __init__(self) -> None:
         """Create a decoder with an empty internal buffer."""
-        self._buffer = bytearray()
+        self._buffer = b""
 
     def feed(self, chunk: bytes) -> list[bytes]:
         """Append *chunk* and return any frame payloads it completed, in order."""
-        self._buffer.extend(chunk)
-        frames: list[bytes] = []
-        while len(self._buffer) >= LENGTH_PREFIX_SIZE:
-            (length,) = _LENGTH_PREFIX.unpack_from(self._buffer)
-            end = LENGTH_PREFIX_SIZE + length
-            if len(self._buffer) < end:
-                break
-            frames.append(bytes(self._buffer[LENGTH_PREFIX_SIZE:end]))
-            del self._buffer[:end]
+        frames, self._buffer = _extract_frames(self._buffer + chunk)
         return frames

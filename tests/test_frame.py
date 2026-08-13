@@ -51,3 +51,26 @@ def test_decoder_empty_payload_frame() -> None:
 def test_decoder_no_frames_from_empty_feed() -> None:
     decoder = frame.FrameDecoder()
     assert decoder.feed(b"") == []
+
+
+# `_extract_frames` is the pure core `FrameDecoder.feed` wraps; tested directly here
+# because it needs no decoder instance, no chunking simulation, and no I/O to exercise
+# every case exhaustively.
+
+
+def test_extract_frames_empty_buffer() -> None:
+    assert frame._extract_frames(b"") == ([], b"")
+
+
+def test_extract_frames_returns_leftover_bytes_unchanged() -> None:
+    leftover = frame.encode_frame(b"whole") + b"\x00\x00"
+    frames, remainder = frame._extract_frames(leftover)
+    assert frames == [b"whole"]
+    assert remainder == b"\x00\x00"
+
+
+def test_extract_frames_is_pure_does_not_mutate_input() -> None:
+    buffer = frame.encode_frame(b"one") + frame.encode_frame(b"two")
+    before = bytes(buffer)
+    frame._extract_frames(buffer)
+    assert buffer == before
