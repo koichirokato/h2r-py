@@ -42,7 +42,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true # Google Style Guide: one import per line
+force-single-line = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
