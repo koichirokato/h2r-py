@@ -35,6 +35,35 @@ class PeerEntry:
     """Topics this peer subscribes to."""
 
 
+def _parse_peers(data: dict[str, Any] | None) -> dict[str, PeerEntry]:
+    """Build the peer table from a parsed YAML document's top-level mapping.
+
+    Pure: the result depends only on *data*.
+    """
+    peers: dict[str, PeerEntry] = {}
+    for name, raw in ((data or {}).get("peers") or {}).items():
+        peers[name] = PeerEntry(
+            address=raw["addr"],
+            publishes=raw.get("publishes") or [],
+            subscribes=raw.get("subscribes") or [],
+        )
+    return peers
+
+
+def _build_topic_index(peers: dict[str, PeerEntry]) -> dict[str, tuple[str, int]]:
+    """Index *peers* by the topics they publish, resolved to ``(host, port)``.
+
+    Pure: the result depends only on *peers*.
+    """
+    topic_address: dict[str, tuple[str, int]] = {}
+    for entry in peers.values():
+        host, _, port_str = entry.address.rpartition(":")
+        port = int(port_str)
+        for topic in entry.publishes:
+            topic_address[topic] = (host, port)
+    return topic_address
+
+
 class PeerRegistry:
     """Loaded peer registry.
 
@@ -44,41 +73,22 @@ class PeerRegistry:
     def __init__(self, peers: dict[str, PeerEntry]) -> None:
         """Index *peers* by the topics they publish."""
         self._peers = peers
-        self._topic_address: dict[str, tuple[str, int]] = {}
-        for entry in peers.values():
-            host, _, port_str = entry.address.rpartition(":")
-            port = int(port_str)
-            for topic in entry.publishes:
-                self._topic_address[topic] = (host, port)
+        self._topic_address = _build_topic_index(peers)
 
     @classmethod
     def from_file(cls, path: str | pathlib.Path) -> PeerRegistry:
         """Load the registry from a YAML file."""
-        with pathlib.Path(path).open() as file:
-            data = yaml.safe_load(file)
-        return cls._from_dict(data)
+        return cls.from_string(pathlib.Path(path).read_text())
 
     @classmethod
     def from_string(cls, yaml_text: str) -> PeerRegistry:
         """Parse the registry from a YAML string."""
-        data = yaml.safe_load(yaml_text)
-        return cls._from_dict(data)
+        return cls(_parse_peers(yaml.safe_load(yaml_text)))
 
     @classmethod
     def empty(cls) -> PeerRegistry:
         """Return an empty registry."""
         return cls({})
-
-    @classmethod
-    def _from_dict(cls, data: dict[str, Any] | None) -> PeerRegistry:
-        peers: dict[str, PeerEntry] = {}
-        for name, raw in ((data or {}).get("peers") or {}).items():
-            peers[name] = PeerEntry(
-                address=raw["addr"],
-                publishes=raw.get("publishes") or [],
-                subscribes=raw.get("subscribes") or [],
-            )
-        return cls(peers)
 
     def resolve_topic(self, topic: str) -> tuple[str, int] | None:
         """Return ``(host, port)`` for the publisher of *topic*, or ``None``."""

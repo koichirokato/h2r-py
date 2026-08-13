@@ -42,7 +42,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "D"] # assert is pytest's mechanism; test names are self-documenting
+"tests/**" = [
+    "S101",   # assert is pytest's mechanism
+    "D",      # test names are self-documenting
+    "SLF001", # tests exercise private pure helpers directly, by design
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
