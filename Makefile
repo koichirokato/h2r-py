@@ -52,7 +52,7 @@ lint: ruff-check ruff-format-check ty
 
 ## Run the test suite
 test:
-	docker compose run --rm dev uv run pytest -v
+	docker compose run --rm dev uv run pytest -v --cov=src/h2r --cov-report=xml --cov-report=term-missing
 
 ## Full check: lint + test (same as CI and the pre-push hook)
 check: lint test
