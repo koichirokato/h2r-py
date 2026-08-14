@@ -35,6 +35,19 @@ relying on multicast/mDNS.
 
 This repository is a pure-Python implementation of h2r.
 
+## Try it
+
+`examples/publisher_example.py` advertises a topic and publishes an incrementing counter once a
+second; `examples/subscriber_example.py` connects to it and prints what it receives. Run both in
+the same dev container (they need to reach each other over the network):
+
+```sh
+docker compose run --rm dev bash
+# inside the container:
+uv run python examples/publisher_example.py &
+uv run python examples/subscriber_example.py
+```
+
 ## Development
 
 Docker + uv; no host Python setup required.
@@ -51,10 +64,12 @@ Run `make help` for all targets.
 ## Layout
 
 ```
+examples/    runnable publisher/subscriber sample
 src/h2r/     package
 tests/       pytest suite
 ```
 
 ## Status
 
-Development environment scaffolding only — the h2r protocol itself is not implemented yet.
+Core protocol implemented: length-delimited framing (`h2r.frame`), the static peer registry
+(`h2r.registry`), and the HTTP/2 publisher/subscriber (`h2r.publisher`, `h2r.subscriber`).
