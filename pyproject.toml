@@ -56,6 +56,10 @@ convention = "google"
     "SLF001",  # tests exercise private pure helpers directly, by design
     "PLR2004", # expected values in assertions are the point of a test, not magic numbers
 ]
+"examples/**" = [
+    "T201",   # print output is the point of a standalone example script
+    "INP001", # standalone example scripts, not part of an installable package
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -45,7 +45,7 @@ fmt:
 
 ## ty check at max strictness
 ty:
-	docker compose run --rm dev uv run ty check --error all src/h2r tests
+	docker compose run --rm dev uv run ty check --error all src/h2r tests examples
 
 ## Lint: ruff check, ruff format --check, ty (no writes)
 lint: ruff-check ruff-format-check ty
