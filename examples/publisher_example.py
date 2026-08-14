@@ -33,6 +33,12 @@ async def main() -> None:
 
     print(f"publishing {_TOPIC} on {_HOST}:{node.port}")
 
+    # h2r is a broadcast, no-replay pub/sub: `publish()` only reaches subscribers that have
+    # already completed their HTTP/2 handshake at call time, and nothing is buffered for
+    # latecomers. So if `subscriber_example.py` is started after the loop below has already
+    # begun, its first printed message won't be "0" -- it'll be whatever count was first
+    # published after the subscriber finished connecting. That's expected protocol behavior,
+    # not a bug (see README.md's "Pub/sub model" section).
     try:
         for count in itertools.count():
             node.publish(_TOPIC, str(count).encode())

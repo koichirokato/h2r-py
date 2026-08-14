@@ -48,6 +48,12 @@ uv run python examples/publisher_example.py &
 uv run python examples/subscriber_example.py
 ```
 
+Note: h2r uses broadcast semantics with no message replay (see "Pub/sub model" above), so the
+subscriber only receives messages published after its connection completes. Because starting the
+subscriber is itself racing against the publisher's one-second publish loop, its first printed
+message is usually not "0" -- a few counts may already have been published (and dropped, for lack
+of a connected subscriber) before it connects. This is expected, not a bug.
+
 ## Development
 
 Docker + uv; no host Python setup required.
