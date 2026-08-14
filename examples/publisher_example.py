@@ -11,12 +11,26 @@ _HOST = "127.0.0.1"
 _PORT = 8081
 _TOPIC = "/counter"
 
+# How long to wait for `serve()` to fail fast (e.g. address already in use) before assuming
+# the bind succeeded and it's now blocked on `aclose()`. See `main`'s comment below.
+_STARTUP_TIMEOUT_SECONDS = 0.5
+
 
 async def main() -> None:
     """Serve `_TOPIC`, publishing an incrementing counter once a second."""
     node = publisher.Publisher(_HOST, _PORT)
     node.advertise(_TOPIC, "text/plain")
     serve_task = asyncio.ensure_future(node.serve())
+
+    # `serve()` only returns once `aclose()` is called, so if it finishes this early the
+    # startup itself failed (e.g. `OSError: address already in use`). Surface that now
+    # instead of printing a false "publishing ..." success and looping forever.
+    await asyncio.wait([serve_task], timeout=_STARTUP_TIMEOUT_SECONDS)
+    if serve_task.done():
+        await serve_task  # re-raises the startup failure.
+        msg = "publisher stopped before it started serving"
+        raise RuntimeError(msg)
+
     print(f"publishing {_TOPIC} on {_HOST}:{node.port}")
 
     try:
