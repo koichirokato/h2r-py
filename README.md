@@ -1,5 +1,7 @@
 # h2r-py
 
+[![codecov](https://codecov.io/gh/koichirokato/h2r-py/branch/main/graph/badge.svg)](https://codecov.io/gh/koichirokato/h2r-py)
+
 h2r is a lightweight publish/subscribe middleware for robots, built on raw HTTP/2 streaming.
 
 ## Why
