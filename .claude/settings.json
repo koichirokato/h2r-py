@@ -15,6 +15,17 @@
             "statusMessage": "Running pre-push checks (ruff / ty / pytest via Docker)..."
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/pre-skill-check.sh",
+            "timeout": 10,
+            "statusMessage": "Checking worktree before allowing this skill..."
+          }
+        ]
       }
     ]
   }
