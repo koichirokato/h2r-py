@@ -21,6 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # docker-compose.yml's bench/bench-ros2/dev services run as
+      # DEV_UID:DEV_GID (see the Makefile) so files written into bind mounts
+      # stay host-owned; unlike ci.yml this workflow calls `docker compose`
+      # directly instead of going through `make`, so it must export these
+      # itself or the container falls back to uid/gid 1000 and can't write
+      # into the checkout.
+      - name: Set DEV_UID/DEV_GID
+        run: |
+          echo "DEV_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "DEV_GID=$(id -g)" >> "$GITHUB_ENV"
+
       - name: Build bench image (h2r + ZeroMQ + gRPC)
         run: docker compose build bench
 
@@ -50,6 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set DEV_UID/DEV_GID
+        run: |
+          echo "DEV_UID=$(id -u)" >> "$GITHUB_ENV"
+          echo "DEV_GID=$(id -g)" >> "$GITHUB_ENV"
 
       - name: Build bench-ros2 image (ROS 2 Humble)
         run: docker compose build bench-ros2

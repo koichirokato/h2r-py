@@ -20,7 +20,6 @@ import datetime
 import pathlib
 import tempfile
 
-from benchmarks import h2r_bench
 from benchmarks.common import runner
 from benchmarks.common.result import BenchmarkResult
 from benchmarks.common.result import save_results
@@ -73,6 +72,11 @@ def _scenarios(args: argparse.Namespace) -> list[tuple[int, int]]:
 
 
 def _run_h2r(scenarios: list[tuple[int, int]]) -> list[BenchmarkResult]:
+    # Imported lazily: h2r.subscriber uses `typing.Self` (Python 3.11+), which would break
+    # --middleware ros2/zmq/grpc under the ROS 2 Humble image's system Python 3.10 if this
+    # were a module-level import — those middlewares never touch the h2r package.
+    from benchmarks import h2r_bench  # noqa: PLC0415
+
     notes = _NOTES["h2r"]
     return [
         asyncio.run(h2r_bench.run_scenario(size, count, notes=notes)) for size, count in scenarios
