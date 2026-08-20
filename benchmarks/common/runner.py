@@ -256,16 +256,24 @@ def run_subprocess_scenario(
     subscriber_sampler = ResourceSampler(subscriber_proc.pid)
     publisher_sampler.start()
     subscriber_sampler.start()
-    try:
-        subscriber_proc.wait(timeout=timeout_s)
-        publisher_proc.wait(timeout=_TERMINATE_GRACE_S)
-    except subprocess.TimeoutExpired:
+
+    def _kill_and_message(elapsed_s: float) -> str:
         publisher_proc.kill()
         subscriber_proc.kill()
         publisher_proc.wait()
         subscriber_proc.wait()
-        message = f"{middleware} scenario (size={size}, count={count}) timed out after {timeout_s}s"
-        raise RuntimeError(message) from None
+        return f"{middleware} scenario (size={size}, count={count}) timed out after {elapsed_s}s"
+
+    try:
+        try:
+            subscriber_proc.wait(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(_kill_and_message(timeout_s)) from None
+
+        try:
+            publisher_proc.wait(timeout=_TERMINATE_GRACE_S)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError(_kill_and_message(_TERMINATE_GRACE_S)) from None
     finally:
         usage = combine_usage([publisher_sampler.stop(), subscriber_sampler.stop()])
 
