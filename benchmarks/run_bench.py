@@ -78,9 +78,16 @@ def _run_h2r(scenarios: list[tuple[int, int]]) -> list[BenchmarkResult]:
     from benchmarks import h2r_bench  # noqa: PLC0415
 
     notes = _NOTES["h2r"]
-    return [
-        asyncio.run(h2r_bench.run_scenario(size, count, notes=notes)) for size, count in scenarios
-    ]
+    results = []
+    for size, count in scenarios:
+        result = asyncio.run(h2r_bench.run_scenario(size, count, notes=notes))
+        results.append(result)
+        print(
+            f"h2r: size={size} count={count} "
+            f"throughput={result.throughput_msgs_per_s:.0f} msgs/s "
+            f"p50={result.latency_p50_ms:.3f}ms dropped={result.dropped_messages}",
+        )
+    return results
 
 
 def _run_subprocess_middleware(
