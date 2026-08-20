@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from benchmarks.common.result import BenchmarkResult
 from benchmarks.common.result import load_results
 from benchmarks.common.result import save_results
@@ -53,3 +55,26 @@ def test_notes_defaults_to_empty_string() -> None:
         {k: v for k, v in _SAMPLE.to_dict().items() if k != "notes"},
     )
     assert result.notes == ""
+
+
+def test_from_dict_missing_required_field_raises() -> None:
+    # Unlike `notes`, every other field has no default: a result file from a version that
+    # dropped a field (not just added one) must fail loudly rather than silently
+    # constructing a partially-populated result.
+    data = {k: v for k, v in _SAMPLE.to_dict().items() if k != "middleware"}
+    with pytest.raises(TypeError):
+        BenchmarkResult.from_dict(data)
+
+
+def test_from_dict_unexpected_field_raises() -> None:
+    # A result file from a newer schema version with an extra field must fail loudly
+    # rather than silently being accepted and then dropped.
+    data = {**_SAMPLE.to_dict(), "extra_unexpected_field": "surprise"}
+    with pytest.raises(TypeError):
+        BenchmarkResult.from_dict(data)
+
+
+def test_save_results_empty_list_round_trips(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / "results.json"
+    save_results([], path)
+    assert load_results(path) == []

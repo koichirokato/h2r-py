@@ -52,3 +52,40 @@ def test_parse_payload_ignores_trailing_padding() -> None:
     encoded = payload.build_payload(seq=7, size=256)
     seq, send_ns = payload.parse_payload(encoded)
     assert (seq, send_ns) == payload.parse_payload(encoded[: payload.HEADER_SIZE])
+
+
+def test_parse_payload_ignores_non_zero_trailing_bytes() -> None:
+    # Padding content must never affect the decoded header, even if it isn't the
+    # all-zero padding build_payload happens to produce (e.g. a stale receive buffer).
+    header_only = payload.build_payload(seq=7, size=payload.HEADER_SIZE)
+    garbage = header_only + b"\xff" * 32
+    assert payload.parse_payload(garbage) == payload.parse_payload(header_only)
+
+
+def test_round_trip_preserves_seq_zero() -> None:
+    encoded = payload.build_payload(seq=0, size=payload.HEADER_SIZE)
+    seq, _send_ns = payload.parse_payload(encoded)
+    assert seq == 0
+
+
+def test_round_trip_preserves_arbitrary_negative_seq() -> None:
+    # Only -1 is reserved as HANDSHAKE_SEQ; other negative values must still round-trip
+    # losslessly (SequenceGapTracker treats *every* negative seq as a non-real message,
+    # not just -1, so payload encoding must not special-case -1 either).
+    encoded = payload.build_payload(seq=-42, size=payload.HEADER_SIZE)
+    seq, _send_ns = payload.parse_payload(encoded)
+    assert seq == -42
+
+
+def test_round_trip_preserves_seq_at_int64_max() -> None:
+    max_int64 = 2**63 - 1
+    encoded = payload.build_payload(seq=max_int64, size=payload.HEADER_SIZE)
+    seq, _send_ns = payload.parse_payload(encoded)
+    assert seq == max_int64
+
+
+def test_round_trip_preserves_seq_at_int64_min() -> None:
+    min_int64 = -(2**63)
+    encoded = payload.build_payload(seq=min_int64, size=payload.HEADER_SIZE)
+    seq, _send_ns = payload.parse_payload(encoded)
+    assert seq == min_int64
