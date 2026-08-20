@@ -1,0 +1,98 @@
+name: Bench
+
+# Not a performance-measurement workflow: this runs the benchmark scripts
+# (benchmarks/) end-to-end with small scenarios purely to confirm they still
+# work (build, run, and produce results without erroring). See ci.yml for
+# lint/type/test.
+on:
+  workflow_dispatch:
+  push:
+
+# Small smoke-test scenarios (not benchmarks/common/scenarios.py's
+# DEFAULT_SCENARIOS, which includes e.g. 1 MiB x 500 messages and would be
+# slow here) — enough to exercise each middleware end-to-end.
+env:
+  SMOKE_SIZES: 64 1024
+  SMOKE_COUNTS: 200 200
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build bench image (h2r + ZeroMQ + gRPC)
+        run: docker compose build bench
+
+      - name: Run h2r benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware h2r --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run ZeroMQ benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware zmq --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run gRPC benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware grpc --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results
+          path: benchmarks/results/*.json
+          if-no-files-found: error
+
+  bench-ros2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build bench-ros2 image (ROS 2 Humble)
+        run: docker compose build bench-ros2
+
+      - name: Run ROS 2 benchmark (smoke)
+        run: >
+          docker compose run --rm bench-ros2 python3 -m benchmarks.run_bench
+          --middleware ros2 --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-ros2-results
+          path: benchmarks/results/*.json
+          if-no-files-found: error
+
+  bench-report:
+    needs: [bench, bench-ros2]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download bench results
+        uses: actions/download-artifact@v4
+        with:
+          name: bench-results
+          path: benchmarks/results
+
+      - name: Download bench-ros2 results
+        uses: actions/download-artifact@v4
+        with:
+          name: bench-ros2-results
+          path: benchmarks/results
+
+      - name: Build dev image
+        run: make build
+
+      - name: Render comparison report
+        run: make bench-report
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report
+          path: benchmarks/results/report.md
+          if-no-files-found: error
