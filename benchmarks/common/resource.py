@@ -82,9 +82,17 @@ class ResourceSampler:
 
     def _run(self) -> None:
         while not self._stop_event.wait(self._interval_s):
+            cpu_sample: float | None = None
+            rss_sample: float | None = None
             with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
-                self._cpu_samples.append(self._process.cpu_percent())
-                self._rss_samples.append(float(self._process.memory_info().rss))
+                cpu_sample = self._process.cpu_percent()
+                rss_sample = float(self._process.memory_info().rss)
+            # Only record a sample once both cpu and rss were read successfully, so the
+            # two lists never drift out of sync (e.g. the process exiting between the two
+            # psutil calls above).
+            if cpu_sample is not None and rss_sample is not None:
+                self._cpu_samples.append(cpu_sample)
+                self._rss_samples.append(rss_sample)
 
     def stop(self) -> ResourceUsage:
         """Stop sampling and return the summary; safe to call even if never started."""

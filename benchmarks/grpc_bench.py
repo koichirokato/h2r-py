@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import pathlib
 import sys
+import tempfile
 import threading
 import time
 from concurrent import futures
@@ -38,8 +39,19 @@ _GENERATED_DIR = pathlib.Path(__file__).resolve().parent / "generated"
 _OVERALL_TIMEOUT_S = 60.0
 
 
+_GENERATED_STUB_NAMES = ("bench_pb2.py", "bench_pb2_grpc.py")
+
+
 def _ensure_generated_stubs() -> None:
-    """Generate ``bench_pb2``/``bench_pb2_grpc`` into `_GENERATED_DIR` if not already there."""
+    """Generate ``bench_pb2``/``bench_pb2_grpc`` into `_GENERATED_DIR` if not already there.
+
+    Publisher and subscriber are separate processes started (near-)simultaneously by
+    :mod:`benchmarks.common.runner`, so on a first run both may race into this function
+    before either has written the stubs. To avoid one process importing a file the other
+    is still mid-write on, each generates into its own private temp directory and then
+    atomically renames the finished files into place with :meth:`pathlib.Path.replace`
+    — any concurrent generation is wasted work, never a partially-written file.
+    """
     pb2_file = _GENERATED_DIR / "bench_pb2.py"
     grpc_file = _GENERATED_DIR / "bench_pb2_grpc.py"
     if pb2_file.exists() and grpc_file.exists():
@@ -47,16 +59,20 @@ def _ensure_generated_stubs() -> None:
     _GENERATED_DIR.mkdir(exist_ok=True)
     from grpc_tools import protoc  # noqa: PLC0415 -- optional, only needed to (re)generate stubs
 
-    args = [
-        "protoc",
-        f"-I{_PROTO_DIR}",
-        f"--python_out={_GENERATED_DIR}",
-        f"--grpc_python_out={_GENERATED_DIR}",
-        str(_PROTO_DIR / "bench.proto"),
-    ]
-    if protoc.main(args) != 0:
-        message = "failed to generate gRPC stubs from bench.proto"
-        raise RuntimeError(message)
+    with tempfile.TemporaryDirectory(dir=_GENERATED_DIR) as tmp_dir_name:
+        tmp_dir = pathlib.Path(tmp_dir_name)
+        args = [
+            "protoc",
+            f"-I{_PROTO_DIR}",
+            f"--python_out={tmp_dir}",
+            f"--grpc_python_out={tmp_dir}",
+            str(_PROTO_DIR / "bench.proto"),
+        ]
+        if protoc.main(args) != 0:
+            message = "failed to generate gRPC stubs from bench.proto"
+            raise RuntimeError(message)
+        for name in _GENERATED_STUB_NAMES:
+            (tmp_dir / name).replace(_GENERATED_DIR / name)
 
 
 _ensure_generated_stubs()
