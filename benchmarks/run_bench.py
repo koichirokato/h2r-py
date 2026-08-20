@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> None:
         )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_path = args.output_dir / f"{args.middleware}-{timestamp}.json"
     save_results(results, output_path)
     print(f"wrote {len(results)} result(s) to {output_path}")

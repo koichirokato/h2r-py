@@ -143,7 +143,7 @@ def build_benchmark_result(
         cpu_percent_peak=usage.cpu_percent_peak,
         rss_bytes_mean=usage.rss_bytes_mean,
         rss_bytes_peak=usage.rss_bytes_peak,
-        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
         notes=notes,
     )
 

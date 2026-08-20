@@ -73,6 +73,7 @@ convention = "google"
     "E402",     # grpc_bench.py generates its stub modules before importing them
     "PLR0913",  # scenario/report builders take many independent named measurements
     "ASYNC110", # h2r_bench.py's short listen-port poll has no event to wait on instead
+    "UP017",    # datetime.UTC is 3.11+; the bench-ros2 image's system Python is 3.10
 ]
 
 [tool.pytest.ini_options]
