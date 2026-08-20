@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package benchmarks;
+
+// A single benchmark message: the length-delimited framing gRPC/HTTP2 already gives us
+// makes h2r's explicit `h2r.frame` layer unnecessary here — this is just the raw payload
+// built by `benchmarks.common.payload.build_payload`.
+message Frame {
+  bytes payload = 1;
+}
+
+message SubscribeRequest {
+  int32 message_count = 1;
+  int32 message_size = 2;
+}
+
+// One RPC: the server streams exactly `message_count` frames back per call. Unlike h2r,
+// ZeroMQ, and ROS 2 (broadcast, no replay — see benchmarks.common.payload's handshake
+// probe note), gRPC's server-streaming dispatch only starts once this call arrives, so
+// there's no slow-joiner race and no probe phase needed.
+service BenchService {
+  rpc Subscribe(SubscribeRequest) returns (stream Frame);
+}

@@ -24,6 +24,12 @@ dev = [
     "pytest-cov>=5",
     "httpx[http2]>=0.27",
 ]
+bench = [
+    "psutil>=5.9",
+    "pyzmq>=26",
+    "grpcio>=1.60",
+    "grpcio-tools>=1.60",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -59,6 +65,14 @@ convention = "google"
 "examples/**" = [
     "T201",   # print output is the point of a standalone example script
     "INP001", # standalone example scripts, not part of an installable package
+]
+"benchmarks/**" = [
+    "T201",     # benchmark scripts report results via print, by design
+    "S603",     # subprocess calls launch our own benchmark scripts with fixed args
+    "S607",     # partial executable paths (python, uv) are fine here, not user input
+    "E402",     # grpc_bench.py generates its stub modules before importing them
+    "PLR0913",  # scenario/report builders take many independent named measurements
+    "ASYNC110", # h2r_bench.py's short listen-port poll has no event to wait on instead
 ]
 
 [tool.pytest.ini_options]

@@ -4,7 +4,9 @@
 # run` directly.
 
 .PHONY: build shell sync ruff-check ruff-check-fix ruff-format-check fmt ty \
-	lint test check pre-commit-install clean help
+	lint test check pre-commit-install clean help \
+	bench-build bench-ros2-build bench-shell bench-ros2-shell \
+	bench-h2r bench-zmq bench-grpc bench-ros2 bench-report bench-all
 
 # Run the dev container as the host user (see docker-compose.yml's `user:`
 # field) so files it writes into bind mounts / volumes stay host-owned.
@@ -66,3 +68,44 @@ clean:
 ## Show available targets
 help:
 	@grep -E '^## ' Makefile | sed 's/## /  /'
+
+# --- benchmarks/ (manual only: never called by `make check`, `make build`, or CI) ---
+
+## Build the bench Docker image (h2r + ZeroMQ + gRPC)
+bench-build:
+	docker compose build bench
+
+## Build the bench-ros2 Docker image (ROS 2 Humble)
+bench-ros2-build:
+	docker compose build bench-ros2
+
+## Open an interactive shell in the bench container
+bench-shell:
+	docker compose run --rm bench bash
+
+## Open an interactive shell in the bench-ros2 container
+bench-ros2-shell:
+	docker compose run --rm bench-ros2 bash
+
+## Run the h2r benchmark across the default scenarios
+bench-h2r:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware h2r
+
+## Run the ZeroMQ benchmark across the default scenarios
+bench-zmq:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware zmq
+
+## Run the gRPC benchmark across the default scenarios
+bench-grpc:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware grpc
+
+## Run the ROS 2 benchmark across the default scenarios (BEST_EFFORT, 64-deep queue)
+bench-ros2:
+	docker compose run --rm bench-ros2 python3 -m benchmarks.run_bench --middleware ros2
+
+## Render benchmarks/results/*.json into a Markdown comparison report
+bench-report:
+	docker compose run --rm dev uv run python -m benchmarks.compare
+
+## Run every middleware's benchmark, then render the comparison report
+bench-all: bench-h2r bench-zmq bench-grpc bench-ros2 bench-report

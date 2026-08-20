@@ -21,5 +21,48 @@ services:
     tty: true
     stdin_open: true
 
+  # Manual-only, not used by `make check`/`make build`/CI: benchmarking h2r
+  # against ZeroMQ and gRPC (see benchmarks/). Its own named volume keeps this
+  # image's `.venv` (built with the `bench` extra) separate from `dev`'s.
+  bench:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.bench
+      args:
+        DEV_UID: "${DEV_UID:-1000}"
+        DEV_GID: "${DEV_GID:-1000}"
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    environment:
+      - HOME=/tmp
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - h2r-py-bench-venv:/workspace/.venv
+    tty: true
+    stdin_open: true
+
+  # Manual-only, not used by `make check`/`make build`/CI: benchmarking h2r
+  # against ROS 2 (see benchmarks/ros2_bench.py). Separate image because it
+  # needs rclpy from ros:humble-ros-base's system site-packages, which the
+  # `bench` image's isolated uv venv can't see.
+  bench-ros2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ros2
+      args:
+        DEV_UID: "${DEV_UID:-1000}"
+        DEV_GID: "${DEV_GID:-1000}"
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    environment:
+      - HOME=/tmp
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - h2r-py-bench-ros2-venv:/workspace/.venv-ros2
+    tty: true
+    stdin_open: true
+
 volumes:
   h2r-py-venv:
+  h2r-py-bench-venv:
+  h2r-py-bench-ros2-venv:

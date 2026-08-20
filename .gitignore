@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# h2r-py benchmarks (see benchmarks/): generated result files and gRPC stub code, not
+# reproducible build inputs, so not checked in.
+benchmarks/results/*
+!benchmarks/results/.gitkeep
+benchmarks/generated/
