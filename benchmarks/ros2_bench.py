@@ -27,7 +27,7 @@ import rclpy
 from rclpy.qos import HistoryPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import ReliabilityPolicy
-from std_msgs.msg import ByteMultiArray
+from std_msgs.msg import UInt8MultiArray
 
 from benchmarks.common import payload
 from benchmarks.common import runner
@@ -57,16 +57,16 @@ def _build_qos() -> QoSProfile:
 def _run_publisher(*, size: int, count: int, ready_file: pathlib.Path) -> None:
     rclpy.init()
     node = rclpy.create_node("h2r_bench_publisher")
-    publisher = node.create_publisher(ByteMultiArray, _TOPIC, _build_qos())
+    publisher = node.create_publisher(UInt8MultiArray, _TOPIC, _build_qos())
     try:
         while not ready_file.exists():
-            probe = ByteMultiArray()
+            probe = UInt8MultiArray()
             probe.data = payload.build_payload(payload.HANDSHAKE_SEQ, size)
             publisher.publish(probe)
             rclpy.spin_once(node, timeout_sec=_PROBE_INTERVAL_S)
 
         for seq in range(count):
-            message = ByteMultiArray()
+            message = UInt8MultiArray()
             message.data = payload.build_payload(seq, size)
             publisher.publish(message)
     finally:
@@ -91,7 +91,7 @@ def _run_subscriber(
     startup_connect_s = 0.0
     handshake_start = time.perf_counter()
 
-    def _on_message(message: ByteMultiArray) -> None:
+    def _on_message(message: UInt8MultiArray) -> None:
         nonlocal recv_start_s, recv_end_s, startup_connect_s
         seq, send_ns = payload.parse_payload(bytes(message.data))
         if seq == payload.HANDSHAKE_SEQ:
@@ -107,7 +107,7 @@ def _run_subscriber(
         gap_tracker.observe(seq)
         latencies_ns.append(recv_ns - send_ns)
 
-    node.create_subscription(ByteMultiArray, _TOPIC, _on_message, _build_qos())
+    node.create_subscription(UInt8MultiArray, _TOPIC, _on_message, _build_qos())
 
     try:
         deadline = time.perf_counter() + _OVERALL_TIMEOUT_S

@@ -134,7 +134,13 @@ def _run_subscriber(
 
     connect_start = time.perf_counter()
     try:
-        for frame in stub.Subscribe(request, timeout=_OVERALL_TIMEOUT_S):
+        # wait_for_ready=True: publisher/subscriber processes start ~simultaneously (see
+        # runner.py), so the channel may not be READY yet when this call is made. Without
+        # it, grpc's default (wait_for_ready=False) fails the RPC immediately with
+        # UNAVAILABLE instead of retrying until timeout, and the server-side Subscribe
+        # never gets dispatched — see the module docstring's note on why this benchmark
+        # otherwise needs no handshake-probe phase.
+        for frame in stub.Subscribe(request, timeout=_OVERALL_TIMEOUT_S, wait_for_ready=True):
             seq, send_ns = payload.parse_payload(frame.payload)
             recv_ns = time.perf_counter_ns()
             now_s = time.perf_counter()
