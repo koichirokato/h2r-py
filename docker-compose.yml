@@ -22,7 +22,7 @@ services:
     stdin_open: true
 
   # Manual-only, not used by `make check`/`make build`/CI: benchmarking h2r
-  # against ZeroMQ and gRPC (see benchmarks/). Its own named volume keeps this
+  # against ZeroMQ, gRPC, and Zenoh (see benchmarks/). Its own named volume keeps this
   # image's `.venv` (built with the `bench` extra) separate from `dev`'s.
   bench:
     build:

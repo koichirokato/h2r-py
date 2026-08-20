@@ -29,6 +29,7 @@ bench = [
     "pyzmq>=26",
     "grpcio>=1.60",
     "grpcio-tools>=1.60",
+    "eclipse-zenoh>=1.0",
 ]
 
 [tool.setuptools.packages.find]

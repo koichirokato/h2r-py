@@ -6,7 +6,7 @@
 .PHONY: build shell sync ruff-check ruff-check-fix ruff-format-check fmt ty \
 	lint test check pre-commit-install clean help \
 	bench-build bench-ros2-build bench-shell bench-ros2-shell \
-	bench-h2r bench-zmq bench-grpc bench-ros2 bench-report bench-all
+	bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-report bench-all
 
 # Run the dev container as the host user (see docker-compose.yml's `user:`
 # field) so files it writes into bind mounts / volumes stay host-owned.
@@ -71,7 +71,7 @@ help:
 
 # --- benchmarks/ (manual only: never called by `make check`, `make build`, or CI) ---
 
-## Build the bench Docker image (h2r + ZeroMQ + gRPC)
+## Build the bench Docker image (h2r + ZeroMQ + gRPC + Zenoh)
 bench-build:
 	docker compose build bench
 
@@ -103,9 +103,13 @@ bench-grpc:
 bench-ros2:
 	docker compose run --rm bench-ros2 python3 -m benchmarks.run_bench --middleware ros2
 
+## Run the Zenoh benchmark across the default scenarios
+bench-zenoh:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware zenoh
+
 ## Render benchmarks/results/*.json into a Markdown comparison report
 bench-report:
 	docker compose run --rm dev uv run python -m benchmarks.compare
 
 ## Run every middleware's benchmark, then render the comparison report
-bench-all: bench-h2r bench-zmq bench-grpc bench-ros2 bench-report
+bench-all: bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-report

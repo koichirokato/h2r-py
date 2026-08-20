@@ -33,11 +33,13 @@ _SUBPROCESS_MODULES = {
     "zmq": "benchmarks.zmq_bench",
     "grpc": "benchmarks.grpc_bench",
     "ros2": "benchmarks.ros2_bench",
+    "zenoh": "benchmarks.zenoh_bench",
 }
 _NEEDS_HANDSHAKE = {
     "zmq": True,
     "grpc": False,
     "ros2": True,
+    "zenoh": True,
 }
 _NOTES = {
     "h2r": "single-process measurement: publisher and subscriber share one event loop, "
@@ -46,12 +48,18 @@ _NOTES = {
     "(see benchmarks/grpc_bench.py).",
     "ros2": "BEST_EFFORT reliability with a 64-deep queue, matching h2r's own subscriber "
     "queue bound; the default RELIABLE QoS profile is out of scope (see benchmarks/ros2_bench.py).",
+    "zenoh": "brokerless, no discovery daemon required, like h2r — a growing DDS "
+    "alternative in robotics (see benchmarks/zenoh_bench.py).",
 }
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--middleware", required=True, choices=["h2r", "zmq", "grpc", "ros2"])
+    parser.add_argument(
+        "--middleware",
+        required=True,
+        choices=["h2r", "zmq", "grpc", "ros2", "zenoh"],
+    )
     parser.add_argument("--sizes", type=int, nargs="*", default=None, help="payload sizes, bytes")
     parser.add_argument("--counts", type=int, nargs="*", default=None, help="message counts")
     parser.add_argument("--host", default=_DEFAULT_HOST)
