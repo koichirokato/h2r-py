@@ -24,6 +24,7 @@ from benchmarks.common import runner
 from benchmarks.common.result import BenchmarkResult
 from benchmarks.common.result import save_results
 from benchmarks.common.scenarios import DEFAULT_SCENARIOS
+from benchmarks.common.scenarios import UDP_DEFAULT_SCENARIOS
 
 _RESULTS_DIR = pathlib.Path(__file__).resolve().parent / "results"
 _DEFAULT_HOST = "127.0.0.1"
@@ -91,6 +92,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def _scenarios(args: argparse.Namespace) -> list[tuple[int, int]]:
     if args.sizes is None:
+        # Raw UDP datagrams cap out at 65,507 bytes over IPv4 (see
+        # benchmarks/udp_bench.py's module docstring); the default scenario set otherwise
+        # includes a 1 MiB scenario that would crash the publisher outright.
+        if args.middleware == "udp":
+            return UDP_DEFAULT_SCENARIOS
         return DEFAULT_SCENARIOS
     return list(zip(args.sizes, args.counts, strict=True))
 

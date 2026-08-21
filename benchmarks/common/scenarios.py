@@ -14,3 +14,17 @@ DEFAULT_SCENARIOS: list[tuple[int, int]] = [
     (1_048_576, 500),  # 1 MiB, e.g. a point cloud or camera frame
 ]
 """``(message_size_bytes, message_count)`` pairs; see :mod:`benchmarks.run_bench`."""
+
+UDP_MAX_DATAGRAM_PAYLOAD_BYTES = 65_507
+"""Largest payload a single IPv4 UDP datagram can carry (16-bit UDP length field minus the
+UDP/IP headers); see :mod:`benchmarks.udp_bench`'s module docstring."""
+
+UDP_DEFAULT_SCENARIOS: list[tuple[int, int]] = [
+    (size, count) for size, count in DEFAULT_SCENARIOS if size <= UDP_MAX_DATAGRAM_PAYLOAD_BYTES
+]
+"""``DEFAULT_SCENARIOS`` with any scenario whose size exceeds a single UDP datagram's payload
+cap removed — raw UDP (unlike every other middleware here) cannot send those at all, so
+running them would just crash the publisher with ``OSError`` (``EMSGSIZE``) on the first
+send. Used only for ``--middleware udp``'s *default* scenario set; explicit ``--sizes``/
+``--counts`` are always run as given, oversized or not, since that's what the caller asked
+for (see :mod:`benchmarks.run_bench`)."""

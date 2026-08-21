@@ -88,6 +88,7 @@ def _run_publisher(*, host: str, port: int, size: int, count: int) -> None:
             conn, _addr = listener.accept()
         except TimeoutError:
             return
+        conn.settimeout(_OVERALL_TIMEOUT_S)
         try:
             for seq in range(count):
                 _send_framed(conn, payload.build_payload(seq, size))

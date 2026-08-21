@@ -27,9 +27,11 @@ kernel drops (buffer overrun, checksum failure, ...) are simply gone, and this b
 reports that as-is, same as every other middleware here. Note that a single UDP datagram
 is capped by the protocol itself at 65,507 bytes of payload over IPv4 (the 16-bit UDP
 length field minus the UDP/IP headers) regardless of MTU/fragmentation settings — larger
-scenario sizes (e.g. this suite's default 1 MiB scenario) will fail with ``OSError``
-(``EMSGSIZE``) on ``sendto()``, a genuine limitation of raw UDP being measured, not a bug
-to work around here.
+sizes fail with ``OSError`` (``EMSGSIZE``) on ``sendto()``, a genuine limitation of raw UDP
+being measured, not a bug to work around here. ``--middleware udp``'s *default* scenario
+set already excludes the suite's 1 MiB scenario for this reason (see
+:data:`benchmarks.common.scenarios.UDP_DEFAULT_SCENARIOS`); explicit ``--sizes`` larger
+than 65,507 bytes will still hit this and fail, deliberately.
 """
 
 from __future__ import annotations
