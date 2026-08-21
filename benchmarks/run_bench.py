@@ -34,12 +34,20 @@ _SUBPROCESS_MODULES = {
     "grpc": "benchmarks.grpc_bench",
     "ros2": "benchmarks.ros2_bench",
     "zenoh": "benchmarks.zenoh_bench",
+    "tcp": "benchmarks.tcp_bench",
+    "udp": "benchmarks.udp_bench",
+    "websocket": "benchmarks.websocket_bench",
+    "mqtt": "benchmarks.mqtt_bench",
 }
 _NEEDS_HANDSHAKE = {
     "zmq": True,
     "grpc": False,
     "ros2": True,
     "zenoh": True,
+    "tcp": False,
+    "udp": True,
+    "websocket": False,
+    "mqtt": True,
 }
 _NOTES = {
     "h2r": "single-process measurement: publisher and subscriber share one event loop, "
@@ -50,6 +58,14 @@ _NOTES = {
     "queue bound; the default RELIABLE QoS profile is out of scope (see benchmarks/ros2_bench.py).",
     "zenoh": "brokerless, no discovery daemon required, like h2r — a growing DDS "
     "alternative in robotics (see benchmarks/zenoh_bench.py).",
+    "tcp": "the transport floor: no pub/sub library at all, just a length-prefixed "
+    "socket stream (see benchmarks/tcp_bench.py).",
+    "udp": "the other transport floor: connectionless, no delivery guarantee; single "
+    "datagrams are capped at 65,507 bytes over IPv4 (see benchmarks/udp_bench.py).",
+    "websocket": "HTTP/1.1 Upgrade then a persistent framed connection, no handshake "
+    "probe phase like gRPC/TCP (see benchmarks/websocket_bench.py).",
+    "mqtt": "the only broker-mediated middleware here; the publisher process also starts "
+    "an in-process amqtt broker for the subscriber to connect to (see benchmarks/mqtt_bench.py).",
 }
 
 
@@ -58,7 +74,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--middleware",
         required=True,
-        choices=["h2r", "zmq", "grpc", "ros2", "zenoh"],
+        choices=["h2r", "zmq", "grpc", "ros2", "zenoh", "tcp", "udp", "websocket", "mqtt"],
     )
     parser.add_argument("--sizes", type=int, nargs="*", default=None, help="payload sizes, bytes")
     parser.add_argument("--counts", type=int, nargs="*", default=None, help="message counts")

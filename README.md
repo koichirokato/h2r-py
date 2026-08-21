@@ -70,7 +70,8 @@ Run `make help` for all targets.
 ## Layout
 
 ```
-benchmarks/  manual-only h2r vs. ZeroMQ/gRPC/ROS 2/Zenoh benchmark suite (see `make bench-*`)
+benchmarks/  manual-only h2r vs. ZeroMQ/gRPC/ROS 2/Zenoh/TCP/UDP/WebSocket/MQTT benchmark
+             suite (see `make bench-*`)
 examples/    runnable publisher/subscriber sample
 src/h2r/     package
 tests/       pytest suite

@@ -32,7 +32,7 @@ jobs:
           echo "DEV_UID=$(id -u)" >> "$GITHUB_ENV"
           echo "DEV_GID=$(id -g)" >> "$GITHUB_ENV"
 
-      - name: Build bench image (h2r + ZeroMQ + gRPC + Zenoh)
+      - name: Build bench image (h2r + ZeroMQ + gRPC + Zenoh + TCP/UDP + WebSocket + MQTT)
         run: docker compose build bench
 
       - name: Run h2r benchmark (smoke)
@@ -54,6 +54,26 @@ jobs:
         run: >
           docker compose run --rm bench uv run python -m benchmarks.run_bench
           --middleware zenoh --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run raw TCP benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware tcp --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run raw UDP benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware udp --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run WebSocket benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware websocket --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
+
+      - name: Run MQTT benchmark (smoke)
+        run: >
+          docker compose run --rm bench uv run python -m benchmarks.run_bench
+          --middleware mqtt --sizes $SMOKE_SIZES --counts $SMOKE_COUNTS
 
       - name: Upload results
         uses: actions/upload-artifact@v4

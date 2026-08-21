@@ -6,7 +6,8 @@
 .PHONY: build shell sync ruff-check ruff-check-fix ruff-format-check fmt ty \
 	lint test check pre-commit-install clean help \
 	bench-build bench-ros2-build bench-shell bench-ros2-shell \
-	bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-report bench-all
+	bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-tcp bench-udp \
+	bench-websocket bench-mqtt bench-report bench-all
 
 # Run the dev container as the host user (see docker-compose.yml's `user:`
 # field) so files it writes into bind mounts / volumes stay host-owned.
@@ -107,9 +108,26 @@ bench-ros2:
 bench-zenoh:
 	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware zenoh
 
+## Run the raw TCP benchmark across the default scenarios (no pub/sub library, the floor)
+bench-tcp:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware tcp
+
+## Run the raw UDP benchmark across the default scenarios (no pub/sub library, the floor)
+bench-udp:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware udp
+
+## Run the WebSocket benchmark across the default scenarios
+bench-websocket:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware websocket
+
+## Run the MQTT benchmark across the default scenarios (paho-mqtt client + in-process amqtt broker)
+bench-mqtt:
+	docker compose run --rm bench uv run python -m benchmarks.run_bench --middleware mqtt
+
 ## Render benchmarks/results/*.json into a Markdown comparison report
 bench-report:
 	docker compose run --rm dev uv run python -m benchmarks.compare
 
 ## Run every middleware's benchmark, then render the comparison report
-bench-all: bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-report
+bench-all: bench-h2r bench-zmq bench-grpc bench-ros2 bench-zenoh bench-tcp bench-udp \
+	bench-websocket bench-mqtt bench-report

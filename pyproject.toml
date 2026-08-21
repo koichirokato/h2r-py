@@ -30,6 +30,9 @@ bench = [
     "grpcio>=1.60",
     "grpcio-tools>=1.60",
     "eclipse-zenoh>=1.0",
+    "websockets>=15.0",
+    "paho-mqtt>=2.1",
+    "amqtt>=0.12",
 ]
 
 [tool.setuptools.packages.find]
@@ -74,6 +77,8 @@ convention = "google"
     "E402",     # grpc_bench.py generates its stub modules before importing them
     "PLR0913",  # scenario/report builders take many independent named measurements
     "ASYNC110", # h2r_bench.py's short listen-port poll has no event to wait on instead
+    "ASYNC240", # mqtt_bench.py polls a small ready-file from an async publish loop shared
+    # with the amqtt broker's event loop, same reasoning as ASYNC110 above
     "UP017",    # datetime.UTC is 3.11+; the bench-ros2 image's system Python is 3.10
 ]
 
